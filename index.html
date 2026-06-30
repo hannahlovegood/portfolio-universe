@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>作品小宇宙 · Portfolio Universe</title>
+<meta name="description" content="一个可以走进去的 3D 作品集小宇宙：WASD 移动，点击物件查看项目。" />
+<style>
+  :root{
+    --bg:#0f1020; --ink:#f4f1ea; --muted:#a9a6c0;
+    --card:#16172b; --line:rgba(255,255,255,.10);
+    --focus:#8ab4ff;
+    --shadow:0 20px 60px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    overflow:hidden;-webkit-tap-highlight-color:transparent;}
+  #scene{position:fixed;inset:0;display:block;touch-action:none;cursor:grab;}
+  #scene.grabbing{cursor:grabbing;}
+  #scene.pointer{cursor:pointer;}
+
+  /* 顶部铭牌 */
+  .topbar{position:fixed;top:16px;left:16px;z-index:20;pointer-events:none;}
+  .topbar h1{margin:0;font-size:16px;letter-spacing:.5px;font-weight:650;}
+  .topbar p{margin:2px 0 0;font-size:12px;color:var(--muted);}
+
+  /* 浮动项目名标签 */
+  #labels{position:fixed;inset:0;z-index:10;pointer-events:none;}
+  .label{position:absolute;transform:translate(-50%,-100%);
+    background:rgba(20,21,40,.72);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:999px;
+    padding:5px 12px;font-size:12.5px;white-space:nowrap;color:var(--ink);
+    pointer-events:auto;cursor:pointer;transition:transform .12s ease,background .12s ease;
+    box-shadow:0 6px 20px rgba(0,0,0,.35);}
+  .label:hover,.label:focus-visible{background:rgba(40,42,78,.92);transform:translate(-50%,-100%) scale(1.06);outline:none;}
+  .label .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle;}
+
+  /* 控制提示 */
+  .hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;
+    display:flex;gap:14px;flex-wrap:wrap;justify-content:center;
+    background:rgba(20,21,40,.6);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:12.5px;color:var(--muted);
+    pointer-events:none;max-width:92vw;}
+  .hint b{color:var(--ink);font-weight:600;}
+  kbd{background:#23254a;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;
+    padding:1px 6px;font-family:inherit;font-size:11.5px;color:var(--ink);}
+
+  /* 项目卡 */
+  .scrim{position:fixed;inset:0;z-index:40;background:rgba(6,6,14,.55);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:20px;}
+  .scrim.open{display:flex;animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .card{width:min(440px,100%);background:var(--card);border:1px solid var(--line);
+    border-radius:18px;box-shadow:var(--shadow);padding:24px;position:relative;
+    transform:translateY(8px);animation:rise .22s ease forwards;}
+  @keyframes rise{to{transform:translateY(0)}}
+  .card .stripe{height:5px;border-radius:999px;width:46px;margin-bottom:16px;}
+  .card h2{margin:0;font-size:21px;line-height:1.25;}
+  .card .en{margin:2px 0 0;font-size:12.5px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;}
+  .card .desc{margin:14px 0 16px;font-size:14.5px;line-height:1.7;color:#dddaf0;}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+  .tag{font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px;}
+  .actions{display:flex;gap:10px;align-items:center;}
+  .btn{appearance:none;border:0;cursor:pointer;font:inherit;font-size:14px;font-weight:600;
+    padding:10px 18px;border-radius:10px;background:var(--ink);color:#15131f;text-decoration:none;
+    display:inline-flex;align-items:center;gap:6px;transition:transform .1s ease,opacity .1s ease;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
+  .btn-muted{font-size:13px;color:var(--muted);}
+  .close{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:9px;
+    background:transparent;border:1px solid var(--line);color:var(--ink);font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;}
+  .close:hover{background:rgba(255,255,255,.06);}
+  .close:focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
+
+  /* 入场遮罩 */
+  .intro{position:fixed;inset:0;z-index:60;background:radial-gradient(120% 120% at 50% 30%,#1a1c38 0%,#0c0d1c 70%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;
+    transition:opacity .5s ease;}
+  .intro.hide{opacity:0;pointer-events:none;}
+  .intro h1{font-size:clamp(28px,6vw,46px);margin:0 0 6px;letter-spacing:1px;}
+  .intro .sub{color:var(--muted);font-size:15px;margin:0 0 26px;}
+  .intro .keys{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:13px;margin-bottom:28px;max-width:520px;}
+  .intro .keys div{min-width:120px;}
+  .enter{font-size:16px;padding:13px 30px;border-radius:12px;background:var(--ink);color:#15131f;border:0;cursor:pointer;font-weight:700;}
+  .enter:focus-visible{outline:3px solid var(--focus);outline-offset:3px;}
+  .credit{position:fixed;bottom:14px;right:16px;z-index:20;font-size:11px;color:var(--muted);opacity:.75;pointer-events:none;text-align:right;}
+  .credit a{color:inherit;}
+  .fallback{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;color:var(--muted);z-index:70;}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+  @media (max-width:640px){ .hint .desktop-only{display:none;} .credit{display:none;} }
+</style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div class="topbar">
+    <h1 id="siteTitle">作品小宇宙</h1>
+    <p id="siteSub">点亮一个物件，走近看看</p>
+  </div>
+
+  <div id="labels" aria-hidden="false"></div>
+
+  <div class="hint">
+    <span class="desktop-only"><b>移动</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向键</span>
+    <span><b>环顾</b> 拖拽</span>
+    <span><b>查看</b> 点击物件</span>
+  </div>
+
+  <div class="credit">受 Bruno Simon《My Room in 3D》启发 · 用 Three.js 手搓</div>
+
+  <!-- 项目卡 -->
+  <div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+    <div class="card">
+      <button class="close" id="closeBtn" aria-label="关闭">×</button>
+      <div class="stripe" id="cardStripe"></div>
+      <h2 id="cardTitle"></h2>
+      <p class="en" id="cardEn"></p>
+      <p class="desc" id="cardDesc"></p>
+      <div class="tags" id="cardTags"></div>
+      <div class="actions" id="cardActions"></div>
+    </div>
+  </div>
+
+  <!-- 入场 -->
+  <div class="intro" id="intro">
+    <h1>作品小宇宙</h1>
+    <p class="sub">一个可以走进去的 3D 作品集 · Portfolio Universe</p>
+    <div class="keys">
+      <div><b style="color:#f4f1ea">WASD / 方向键</b><br/>在房间里走动</div>
+      <div><b style="color:#f4f1ea">拖拽鼠标</b><br/>环顾四周</div>
+      <div><b style="color:#f4f1ea">点击物件</b><br/>打开项目卡</div>
+    </div>
+    <button class="enter" id="enterBtn">进入小宇宙 →</button>
+  </div>
+
+  <div class="fallback" id="fallback">
+    你的浏览器似乎不支持 WebGL，换一个现代浏览器（Chrome / Safari / Edge）就能进入。
+  </div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ============================================================
+   ① 改这里：把下面 6 个换成你自己的项目
+   name 中文名 / en 英文名 / desc 一句话 / tags 标签 / link 链接
+   link 填 "#" 表示暂未上线（卡片会显示「Demo 待上线」）
+   color 是该物件 + 卡片的主题色 / shape 决定它长什么样
+   ============================================================ */
+const OWNER = "你的名字"; // ← 改成你的名字/昵称，会显示在标题
+const PROJECTS = [
+  { name:"命定回响", en:"Mingding Echoes", color:"#e0556b", shape:"obelisk",
+    desc:"点击思想家箴言『铭刻』命运，间隔冒出鬼面与低语的招魂仪式恐怖+哲学游戏。",
+    tags:["游戏","WebAudio","哲学"], link:"https://hannahlovegood.github.io/mingding-echoes/" },
+
+  { name:"Hermes 投研助手", en:"Hermes", color:"#5b8cff", shape:"monitor",
+    desc:"FastAPI + akshare + Claude 的 A 股 agentic 投研助手 MVP，已用真实数据跑通。",
+    tags:["AI Agent","Python","工程"], link:"https://github.com/hannahlovegood/hermes" },
+
+  { name:"B-Side 鲸落", en:"B-Side", color:"#37c6b0", shape:"record",
+    desc:"AI 情绪 DJ『鲸落』听懂你的心情、为你挑歌，把感受变成一面情绪唱片墙。",
+    tags:["AI","音乐","BYOK"], link:"https://hannahlovegood.github.io/bside/" },
+
+  { name:"读墨 Dumo", en:"Dumo", color:"#7ed957", shape:"books",
+    desc:"微信读书笔记一键批量导出，纯前端、数据不出浏览器，可导 ZIP。",
+    tags:["工具","纯前端"], link:"https://hannahlovegood.github.io/dumo-web/" },
+
+  { name:"AI 小镇·云溪镇", en:"AI Town", color:"#ffa64d", shape:"town",
+    desc:"a16z generative-agents 内核的单文件离线小镇，记忆流驱动每日小剧情与埋线回调。",
+    tags:["AI","模拟"], link:"#" }, // ← 部署后把链接换上
+
+  { name:"HookForge", en:"HookForge", color:"#b98bff", shape:"anvil",
+    desc:"给 AI 短剧出海创作者卖『开场钩子』的手动服务 + 单文件生成器。",
+    tags:["出海","变现"], link:"#" }, // ← 落地页上线后换链接
+];
+
+/* ============================================================
+   ② 下面是引擎，一般不用改
+   ============================================================ */
+const canvas = document.getElementById('scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+} catch(e){
+  document.getElementById('fallback').style.display='flex';
+  throw e;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#15172e');
+scene.fog = new THREE.Fog('#15172e', 11, 24);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.rotation.order = 'YXZ';
+camera.position.set(0, 1.6, 0); // 站在房间正中，6 个物件等距环绕
+
+// 文案
+document.getElementById('siteTitle').textContent = OWNER + " 的作品小宇宙";
+document.querySelector('.intro h1').textContent = OWNER + " 的作品小宇宙";
+
+/* ---------- 灯光 ---------- */
+scene.add(new THREE.HemisphereLight('#cfd6ff', '#2a2440', 1.0));
+const key = new THREE.DirectionalLight('#ffe6c2', 1.5);
+key.position.set(6, 12, 6);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.near = 1; key.shadow.camera.far = 40;
+key.shadow.camera.left=-14; key.shadow.camera.right=14;
+key.shadow.camera.top=14; key.shadow.camera.bottom=-14;
+key.shadow.bias = -0.0004;
+scene.add(key);
+const fill = new THREE.DirectionalLight('#7d8cff', 0.4);
+fill.position.set(-8, 6, -6);
+scene.add(fill);
+const overhead = new THREE.PointLight('#ffd9a8', 0.55, 26);
+overhead.position.set(0, 4.2, 0);
+scene.add(overhead);
+
+/* ---------- 房间 ---------- */
+const ROOM = 7;          // 半边长（整间 14×14，紧凑像画廊）
+const WALL_H = 3.8;
+const BOUND = ROOM - 0.7; // 相机活动边界
+
+const floorMat = new THREE.MeshStandardMaterial({ color:'#e9e2d2', roughness:0.95 });
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, ROOM*2), floorMat);
+floor.rotation.x = -Math.PI/2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// 地毯（中心圆）
+const rug = new THREE.Mesh(new THREE.CircleGeometry(6, 48),
+  new THREE.MeshStandardMaterial({ color:'#d6c3a8', roughness:1 }));
+rug.rotation.x = -Math.PI/2; rug.position.y = 0.01; rug.receiveShadow = true;
+scene.add(rug);
+
+function wall(x, z, rotY){
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, WALL_H),
+    new THREE.MeshStandardMaterial({ color:'#474870', roughness:1, side:THREE.DoubleSide }));
+  m.position.set(x, WALL_H/2, z); m.rotation.y = rotY; m.receiveShadow = true;
+  scene.add(m);
+}
+wall(0, -ROOM, 0);          // 后
+wall(-ROOM, 0, Math.PI/2);  // 左
+wall(ROOM, 0, -Math.PI/2);  // 右
+// 前墙留矮一些（半透），保持开阔感
+const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, WALL_H),
+  new THREE.MeshStandardMaterial({ color:'#2c2c4a', roughness:1, transparent:true, opacity:0.35, side:THREE.DoubleSide }));
+frontWall.position.set(0, WALL_H/2, ROOM); frontWall.rotation.y = Math.PI;
+scene.add(frontWall);
+
+/* ---------- 6 个物件 ---------- */
+// 每个 shape 返回一个高度大约 1.4 的 Group（放在 pedestal 上）
+function makeMat(color, opts={}){ return new THREE.MeshStandardMaterial({ color, roughness:0.5, metalness:0.05, emissive:color, emissiveIntensity:0, ...opts }); }
+
+const shapes = {
+  obelisk(c){ const g=new THREE.Group();
+    const body=new THREE.Mesh(new THREE.ConeGeometry(0.55,1.7,4), makeMat(c,{flatShading:true})); body.position.y=0.85; body.rotation.y=Math.PI/4; g.add(body);
+    const orb=new THREE.Mesh(new THREE.SphereGeometry(0.16,24,24), makeMat('#fff2c2',{emissive:'#ffdf7a',emissiveIntensity:0.9})); orb.position.y=1.1; g.add(orb);
+    return g; },
+  monitor(c){ const g=new THREE.Group();
+    const stand=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.34,0.18,20), makeMat('#2b2b3a')); stand.position.y=0.09; g.add(stand);
+    const neck=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.5,0.1), makeMat('#2b2b3a')); neck.position.y=0.42; g.add(neck);
+    const frame=new THREE.Mesh(new THREE.BoxGeometry(1.6,1,0.09), makeMat('#1c1c28')); frame.position.y=1.15; g.add(frame);
+    const screen=new THREE.Mesh(new THREE.PlaneGeometry(1.45,0.85), makeMat(c,{emissive:c,emissiveIntensity:0.55})); screen.position.set(0,1.15,0.05); g.add(screen);
+    return g; },
+  record(c){ const g=new THREE.Group();
+    const base=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.18,1), makeMat('#23232f')); base.position.y=0.5; g.add(base);
+    const plate=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,0.04,40), makeMat('#111')); plate.position.set(-0.1,0.61,0); g.add(plate);
+    const lbl=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,0.05,32), makeMat(c,{emissive:c,emissiveIntensity:0.5})); lbl.position.set(-0.1,0.63,0); g.add(lbl);
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.5,1), makeMat('#1a1a24')); leg.position.y=0.25; g.add(leg);
+    return g; },
+  books(c){ const g=new THREE.Group();
+    const cols=['#caa15a','#8a5a3a','#3a6a8a']; let y=0.12;
+    for(let i=0;i<3;i++){ const w=0.9-i*0.06; const h=0.22;
+      const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,0.7), makeMat(i===1?c:cols[i],{emissive:i===1?c:'#000',emissiveIntensity:0})); b.position.set((i%2?0.04:-0.04),y,0); b.rotation.y=(i-1)*0.08; g.add(b); y+=h+0.015; }
+    const top=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.18,0.66), makeMat(c,{emissive:c,emissiveIntensity:0.35})); top.position.y=y+0.02; top.rotation.z=0.04; g.add(top);
+    return g; },
+  town(c){ const g=new THREE.Group();
+    const plate=new THREE.Mesh(new THREE.CylinderGeometry(0.85,0.9,0.14,24), makeMat('#6f8f5a')); plate.position.y=0.07; g.add(plate);
+    const spots=[[-0.35,0,0.2,0.5],[0.25,0,-0.25,0.7],[0.1,0,0.45,0.42],[-0.1,0,-0.4,0.55]];
+    spots.forEach((s,i)=>{ const h=s[3];
+      const house=new THREE.Mesh(new THREE.BoxGeometry(0.34,h,0.34), makeMat(i===1?c:'#efe7d6',{emissive:i===1?c:'#000',emissiveIntensity:0})); house.position.set(s[0],0.14+h/2,s[2]); g.add(house);
+      const roof=new THREE.Mesh(new THREE.ConeGeometry(0.3,0.26,4), makeMat('#c0573f',{flatShading:true})); roof.position.set(s[0],0.14+h+0.13,s[2]); roof.rotation.y=Math.PI/4; g.add(roof); });
+    return g; },
+  anvil(c){ const g=new THREE.Group();
+    const block=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.45,0.6), makeMat('#5a4632')); block.position.y=0.22; g.add(block);
+    const body=new THREE.Mesh(new THREE.BoxGeometry(1.05,0.32,0.5), makeMat('#3b3b46',{metalness:0.4,roughness:0.4})); body.position.y=0.62; g.add(body);
+    const horn=new THREE.Mesh(new THREE.ConeGeometry(0.16,0.5,16), makeMat('#3b3b46',{metalness:0.4})); horn.rotation.z=-Math.PI/2; horn.position.set(0.72,0.62,0); g.add(horn);
+    const spark=new THREE.Mesh(new THREE.IcosahedronGeometry(0.13,0), makeMat(c,{emissive:c,emissiveIntensity:1,flatShading:true})); spark.position.set(-0.1,0.95,0); g.add(spark);
+    return g; },
+};
+
+const interactives = [];      // 可点击的物件 Group
+const labelEls = [];          // 浮动标签 DOM
+const labelLayer = document.getElementById('labels');
+const tmpV = new THREE.Vector3();
+
+PROJECTS.forEach((p, i) => {
+  const ang = -Math.PI/2 + i * (Math.PI*2/PROJECTS.length);
+  const R = 4.3;
+  const px = Math.cos(ang)*R, pz = Math.sin(ang)*R;
+
+  // 基座
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.2,0.6,28),
+    new THREE.MeshStandardMaterial({ color:'#26273f', roughness:0.8 }));
+  ped.position.set(px, 0.3, pz); ped.castShadow=true; ped.receiveShadow=true;
+  scene.add(ped);
+
+  // 物件
+  const obj = shapes[p.shape](p.color);
+  obj.position.set(px, 0.6, pz);
+  obj.lookAt(0, 0.6, 0);
+  obj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.userData.pid=i; } });
+  obj.userData.pid = i;
+  obj.userData.baseY = 0.6;
+  scene.add(obj);
+  interactives.push(obj);
+
+  // 点光，给物件打个氛围色
+  const pl = new THREE.PointLight(p.color, 0.5, 6);
+  pl.position.set(px, 2.2, pz); scene.add(pl);
+
+  // 浮动标签
+  const el = document.createElement('button');
+  el.className = 'label';
+  el.innerHTML = `<span class="dot" style="background:${p.color}"></span>${p.name}`;
+  el.addEventListener('click', (e)=>{ e.stopPropagation(); if(!entered) return; openCard(i); });
+  labelLayer.appendChild(el);
+  labelEls.push(el);
+});
+
+/* ---------- 控制：WASD 移动 + 拖拽环顾 ---------- */
+let yaw = 0, pitch = -0.05;
+const keys = {};
+let dragging = false, lastX=0, lastY=0, moved=0;
+let cardOpen = false, entered = false;
+
+addEventListener('keydown', e=>{ keys[e.code]=true; });
+addEventListener('keyup', e=>{ keys[e.code]=false; });
+
+canvas.addEventListener('pointerdown', e=>{
+  if(!entered || cardOpen) return;
+  dragging=true; moved=0; lastX=e.clientX; lastY=e.clientY;
+  canvas.classList.add('grabbing');
+  try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
+});
+canvas.addEventListener('pointermove', e=>{
+  if(dragging){
+    const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY;
+    moved += Math.abs(dx)+Math.abs(dy);
+    yaw -= dx*0.0026;
+    pitch -= dy*0.0026;
+    pitch = Math.max(-1.2, Math.min(1.0, pitch));
+  } else {
+    updateHover(e.clientX, e.clientY);
+  }
+});
+canvas.addEventListener('pointerup', e=>{
+  canvas.classList.remove('grabbing');
+  if(dragging && moved < 7){ tryClick(e.clientX, e.clientY); }
+  dragging=false;
+});
+
+const raycaster = new THREE.Raycaster();
+function ndc(x,y){ return new THREE.Vector2((x/window.innerWidth)*2-1, -(y/window.innerHeight)*2+1); }
+
+let hoveredId = -1;
+function pick(x,y){
+  raycaster.setFromCamera(ndc(x,y), camera);
+  const hits = raycaster.intersectObjects(interactives, true);
+  if(hits.length){ let o=hits[0].object; while(o && o.userData.pid===undefined) o=o.parent; return o?o.userData.pid:-1; }
+  return -1;
+}
+function updateHover(x,y){
+  const id = pick(x,y);
+  hoveredId = id;
+  canvas.classList.toggle('pointer', id>=0);
+}
+function tryClick(x,y){ const id = pick(x,y); if(id>=0) openCard(id); }
+
+/* ---------- 项目卡 ---------- */
+const scrim=document.getElementById('scrim'), closeBtn=document.getElementById('closeBtn');
+let lastFocus=null;
+function openCard(i){
+  const p=PROJECTS[i];
+  document.getElementById('cardStripe').style.background=p.color;
+  document.getElementById('cardTitle').textContent=p.name;
+  document.getElementById('cardEn').textContent=p.en;
+  document.getElementById('cardDesc').textContent=p.desc;
+  document.getElementById('cardTags').innerHTML=p.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+  const act=document.getElementById('cardActions');
+  if(p.link && p.link.startsWith('http')){
+    act.innerHTML=`<a class="btn" href="${p.link}" target="_blank" rel="noopener">打开项目 ↗</a>`;
+  } else {
+    act.innerHTML=`<span class="btn-muted">Demo 待上线 · 部署后在代码里补链接</span>`;
+  }
+  lastFocus=document.activeElement;
+  scrim.classList.add('open'); cardOpen=true;
+  for(const k in keys) keys[k]=false; // 停下脚步
+  closeBtn.focus();
+}
+function closeCard(){ scrim.classList.remove('open'); cardOpen=false; if(lastFocus) lastFocus.focus(); }
+closeBtn.addEventListener('click', closeCard);
+scrim.addEventListener('click', e=>{ if(e.target===scrim) closeCard(); });
+addEventListener('keydown', e=>{ if(e.key==='Escape' && cardOpen) closeCard(); });
+
+/* ---------- 入场 ---------- */
+const intro=document.getElementById('intro');
+document.getElementById('enterBtn').addEventListener('click', ()=>{ intro.classList.add('hide'); setTimeout(()=>{ entered=true; }, 350); });
+
+// 调试/可玩 hook（也方便你在控制台 PU.openCard(2) 试卡片）
+window.PU = { camera, openCard, get pos(){return camera.position.toArray().map(n=>+n.toFixed(2));}, get rot(){return [+yaw.toFixed(2), +pitch.toFixed(2)];} };
+
+/* ---------- 循环 ---------- */
+let prev=performance.now();
+function animate(now){
+  const dt=Math.min((now-prev)/1000, 0.05); prev=now;
+
+  // 移动
+  if(!cardOpen && entered){
+    const speed=4.2*dt;
+    const fwd=new THREE.Vector3(); camera.getWorldDirection(fwd); fwd.y=0; fwd.normalize();
+    const right=new THREE.Vector3().crossVectors(fwd, camera.up).normalize();
+    let mz=0, mx=0;
+    if(keys['KeyW']||keys['ArrowUp']) mz+=1;
+    if(keys['KeyS']||keys['ArrowDown']) mz-=1;
+    if(keys['KeyD']||keys['ArrowRight']) mx+=1;
+    if(keys['KeyA']||keys['ArrowLeft']) mx-=1;
+    if(mz||mx){
+      camera.position.addScaledVector(fwd, mz*speed);
+      camera.position.addScaledVector(right, mx*speed);
+      camera.position.x=Math.max(-BOUND,Math.min(BOUND,camera.position.x));
+      camera.position.z=Math.max(-BOUND,Math.min(BOUND,camera.position.z));
+    }
+  }
+  camera.position.y=1.6;
+  camera.rotation.y=yaw; camera.rotation.x=pitch;
+
+  // 物件：高亮 + 轻微浮动
+  const t=now/1000;
+  interactives.forEach((o,i)=>{
+    o.position.y=o.userData.baseY+Math.sin(t*1.3+i)*0.05;
+    o.rotation.y += (i===hoveredId?0.02:0.0015);
+    const target=(i===hoveredId)?0.5:0;
+    o.traverse(m=>{ if(m.isMesh && m.material.emissiveIntensity!==undefined){
+      // 只抬升原本 emissiveIntensity 较低的网格（屏幕/发光体保持自己的亮度）
+      if(m.material.userData.glow===undefined) m.material.userData.glow=m.material.emissiveIntensity;
+      const base=m.material.userData.glow;
+      m.material.emissiveIntensity += ((Math.max(base,target))-m.material.emissiveIntensity)*0.15;
+    }});
+  });
+
+  // 更新浮动标签位置
+  interactives.forEach((o,i)=>{
+    tmpV.set(o.position.x, o.userData.baseY+1.7, o.position.z).project(camera);
+    const el=labelEls[i];
+    if(tmpV.z<1 && tmpV.z>-1){
+      el.style.display='block';
+      el.style.left=((tmpV.x*0.5+0.5)*window.innerWidth)+'px';
+      el.style.top=((-tmpV.y*0.5+0.5)*window.innerHeight)+'px';
+      const d=camera.position.distanceTo(o.position);
+      el.style.opacity=Math.max(0.25, Math.min(1, 16/d - 0.3));
+    } else { el.style.display='none'; }
+  });
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+addEventListener('resize', ()=>{
+  camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
