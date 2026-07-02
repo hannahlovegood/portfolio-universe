@@ -152,7 +152,7 @@ import * as THREE from 'three';
    link 填 "#" 表示暂未上线（卡片会显示「Demo 待上线」）
    color 是该物件 + 卡片的主题色 / shape 决定它长什么样
    ============================================================ */
-const OWNER = "Ningtiao"; // ← 改成你的名字/昵称，会显示在标题
+const OWNER = "Hannah"; // ← 改成你的名字/昵称，会显示在标题
 const PROJECTS = [
   { name:"命定回响", en:"Mingding Echoes", color:"#e0556b", shape:"obelisk",
     desc:"点击思想家箴言『铭刻』命运，间隔冒出鬼面与低语的招魂仪式恐怖+哲学游戏。",
@@ -170,13 +170,13 @@ const PROJECTS = [
     desc:"微信读书笔记一键批量导出，纯前端、数据不出浏览器，可导 ZIP。",
     tags:["工具","纯前端"], link:"https://hannahlovegood.github.io/dumo-web/" },
 
-  { name:"AI 小镇·云溪镇", en:"AI Town", color:"#ffa64d", shape:"town",
-    desc:"a16z generative-agents 内核的单文件离线小镇，记忆流驱动每日小剧情与埋线回调。",
-    tags:["AI","模拟"], link:"#" }, // ← 部署后把链接换上
+  { name:"重启人生·2008", en:"Reboot 2008", color:"#ffa64d", shape:"town",
+    desc:"现代重生流文字养成人生模拟：重回 2008，经营学业与社交关系网，触发支线剧情走向多结局。",
+    tags:["游戏","文字养成"], link:"https://hannahlovegood.github.io/reboot-2008/" },
 
-  { name:"HookForge", en:"HookForge", color:"#b98bff", shape:"anvil",
-    desc:"给 AI 短剧出海创作者卖『开场钩子』的手动服务 + 单文件生成器。",
-    tags:["出海","变现"], link:"#" }, // ← 落地页上线后换链接
+  { name:"溯源 TraceRAG", en:"TraceRAG", color:"#b98bff", shape:"docs",
+    desc:"给答案带上来源的 PDF 问答：每个回答都标注原文出处，依据可核对，拒绝无凭据的幻觉。",
+    tags:["AI","RAG"], link:"https://hannahlovegood.github.io/trace-rag/" },
 ];
 
 /* ============================================================
@@ -297,9 +297,17 @@ const shapes = {
     const horn=new THREE.Mesh(new THREE.ConeGeometry(0.16,0.5,16), makeMat('#3b3b46',{metalness:0.4})); horn.rotation.z=-Math.PI/2; horn.position.set(0.72,0.62,0); g.add(horn);
     const spark=new THREE.Mesh(new THREE.IcosahedronGeometry(0.13,0), makeMat(c,{emissive:c,emissiveIntensity:1,flatShading:true})); spark.position.set(-0.1,0.95,0); g.add(spark);
     return g; },
+  docs(c){ const g=new THREE.Group();
+    const stack=new THREE.Mesh(new THREE.BoxGeometry(0.95,0.5,0.72), makeMat('#efe7d6')); stack.position.y=0.25; g.add(stack);
+    const band=new THREE.Mesh(new THREE.BoxGeometry(0.97,0.07,0.74), makeMat(c,{emissive:c,emissiveIntensity:0.35})); band.position.y=0.36; g.add(band);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(0.28,0.06,16,40), makeMat('#3b3b46',{metalness:0.4,roughness:0.4})); ring.position.set(0,1.05,0.15); g.add(ring);
+    const lens=new THREE.Mesh(new THREE.CircleGeometry(0.24,32), makeMat(c,{emissive:c,emissiveIntensity:0.6,transparent:true,opacity:0.85,side:THREE.DoubleSide})); lens.position.set(0,1.05,0.15); g.add(lens);
+    const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.5,16), makeMat('#5a4632')); handle.position.set(0.27,0.59,0.15); handle.rotation.z=0.52; g.add(handle);
+    return g; },
 };
 
 const interactives = [];      // 可点击的物件 Group
+const obstacles = [];         // 基座碰撞体（圆柱），防止相机穿进展品
 const labelEls = [];          // 浮动标签 DOM
 const labelLayer = document.getElementById('labels');
 const tmpV = new THREE.Vector3();
@@ -314,6 +322,7 @@ PROJECTS.forEach((p, i) => {
     new THREE.MeshStandardMaterial({ color:'#26273f', roughness:0.8 }));
   ped.position.set(px, 0.3, pz); ped.castShadow=true; ped.receiveShadow=true;
   scene.add(ped);
+  obstacles.push({ x:px, z:pz });
 
   // 物件
   const obj = shapes[p.shape](p.color);
@@ -369,6 +378,8 @@ canvas.addEventListener('pointerup', e=>{
   if(dragging && moved < 7){ tryClick(e.clientX, e.clientY); }
   dragging=false;
 });
+canvas.addEventListener('pointercancel', ()=>{ dragging=false; canvas.classList.remove('grabbing'); });
+addEventListener('blur', ()=>{ for(const k in keys) keys[k]=false; });
 
 const raycaster = new THREE.Raycaster();
 function ndc(x,y){ return new THREE.Vector2((x/window.innerWidth)*2-1, -(y/window.innerHeight)*2+1); }
@@ -440,6 +451,12 @@ function animate(now){
       camera.position.addScaledVector(right, mx*speed);
       camera.position.x=Math.max(-BOUND,Math.min(BOUND,camera.position.x));
       camera.position.z=Math.max(-BOUND,Math.min(BOUND,camera.position.z));
+      // 展品基座碰撞：走太近就沿径向推出去，避免相机穿进展品
+      for(const ob of obstacles){
+        const dx=camera.position.x-ob.x, dz=camera.position.z-ob.z;
+        const d=Math.hypot(dx,dz);
+        if(d>1e-4 && d<1.7){ const s=1.7/d; camera.position.x=ob.x+dx*s; camera.position.z=ob.z+dz*s; }
+      }
     }
   }
   camera.position.y=1.6;
