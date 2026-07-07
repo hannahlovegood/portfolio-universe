@@ -224,6 +224,9 @@ const ZONES = [
     { name:"x402 口袋 Agent", en:"x402 Pocket Agent", color:"#3f7dff", shape:"wallet",
       desc:"给 AI 一个钱包和预算：agent 自己用 USDC 支付 402 付费 API，预算护栏写在代码层，两笔真实链上支付可查证。",
       tags:["Agent 支付","x402","链上"], link:"https://hannahlovegood.github.io/x402-agent-demo/" },
+    { name:"全球黑客松地图", en:"Hackathon Atlas", color:"#22d3ee", shape:"atlas",
+      desc:"四源聚合（Devpost/MLH/ETHGlobal/HackerEarth）的实时黑客松世界地图：离线地理编码上图，按时间/国家/类别/时长/奖金六维筛选，Actions 每日自动更新。",
+      tags:["数据聚合","地图","Actions"], link:"https://hannahlovegood.github.io/hackathon-atlas/" },
   ]},
   { name:"工具与效率", en:"TOOLS & UTILITIES", color:"#7ed957", a0:Math.PI/2, items:[
     { name:"读墨 Dumo", en:"Dumo", color:"#7ed957", shape:"books",
@@ -468,6 +471,15 @@ const shapes = {
     const ring=new THREE.Mesh(new THREE.TorusGeometry(0.28,0.06,16,40), makeMat('#3b3b46',{metalness:0.4,roughness:0.4})); ring.position.set(0,1.05,0.15); g.add(ring);
     const lens=new THREE.Mesh(new THREE.CircleGeometry(0.24,32), makeMat(c,{emissive:c,emissiveIntensity:0.6,transparent:true,opacity:0.85,side:THREE.DoubleSide})); lens.position.set(0,1.05,0.15); g.add(lens);
     const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.5,16), makeMat('#5a4632')); handle.position.set(0.27,0.59,0.15); handle.rotation.z=0.52; g.add(handle);
+    return g; },
+  atlas(c){ const g=new THREE.Group();
+    const stand=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.36,0.16,20), makeMat('#2b2b3a')); stand.position.y=0.08; g.add(stand);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.5,12), makeMat('#3b3b46',{metalness:0.4})); pole.position.y=0.4; g.add(pole);
+    const globe=new THREE.Mesh(new THREE.SphereGeometry(0.42,24,18), makeMat('#101a30',{roughness:0.35})); globe.position.y=0.95; g.add(globe);
+    const mer=new THREE.Mesh(new THREE.TorusGeometry(0.43,0.012,8,48), makeMat(c,{emissive:c,emissiveIntensity:0.6,transparent:true,opacity:0.8})); mer.position.y=0.95; g.add(mer);
+    const eq=new THREE.Mesh(new THREE.TorusGeometry(0.43,0.012,8,48), makeMat(c,{emissive:c,emissiveIntensity:0.4,transparent:true,opacity:0.55})); eq.position.y=0.95; eq.rotation.x=Math.PI/2; g.add(eq);
+    [[0.18,1.22,0.3],[-0.3,1.0,0.24],[0.32,0.82,-0.16],[-0.12,0.72,0.38]].forEach(p=>{
+      const pt=new THREE.Mesh(new THREE.SphereGeometry(0.045,10,10), makeMat(c,{emissive:c,emissiveIntensity:1})); pt.position.set(p[0],p[1],p[2]); g.add(pt); });
     return g; },
   radar(c){ const g=new THREE.Group();
     const base=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.42,0.5,20), makeMat('#2b2b3a')); base.position.y=0.25; g.add(base);
