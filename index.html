@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>作品小宇宙 · Portfolio Universe</title>
-<meta name="description" content="一个可以走进去的 3D 作品集小宇宙：星空下的环形广场，四个星区、31 件作品。WASD 漫游，点击物件查看项目。" />
+<meta name="description" content="一个可以走进去的 3D 作品集小宇宙：星空下的环形广场，四个星区、32 件作品。WASD 漫游，点击物件查看项目。" />
 <style>
   :root{
     --bg:#0d0e20; --ink:#f4f1ea; --muted:#a9a6c0;
@@ -107,7 +107,7 @@
 
   <div class="topbar">
     <h1 id="siteTitle">作品小宇宙</h1>
-    <p id="siteSub">四个星区 · 31 件作品 · 走近一件，点亮它</p>
+    <p id="siteSub">四个星区 · 32 件作品 · 走近一件，点亮它</p>
   </div>
 
   <div id="labels" aria-hidden="false"></div>
@@ -139,7 +139,7 @@
   <!-- 入场 -->
   <div class="intro" id="intro">
     <h1>作品小宇宙</h1>
-    <p class="sub">一个可以走进去的 3D 作品集 · 星空下的四个星区，31 件真实作品</p>
+    <p class="sub">一个可以走进去的 3D 作品集 · 星空下的四个星区，32 件真实作品</p>
     <div class="keys">
       <div><b style="color:#f4f1ea">WASD / 摇杆</b><br/>在广场上走动</div>
       <div><b style="color:#f4f1ea">拖拽</b><br/>环顾四周</div>
@@ -160,7 +160,7 @@
 import * as THREE from 'three';
 
 /* ============================================================
-   ① 数据：四个星区 + 中央纪念碑，共 31 件已上线作品
+   ① 数据：四个星区 + 中央纪念碑，共 32 件已上线作品
    name 中文名 / en 英文名 / desc 一句话 / tags 标签 / link 链接
    color 是该物件 + 卡片的主题色 / shape 决定它长什么样
    ============================================================ */
@@ -168,6 +168,9 @@ const OWNER = "Hannah"; // ← 显示在标题里的名字
 
 const ZONES = [
   { name:"游戏与叙事", en:"GAMES & STORIES", color:"#ff8f6b", a0:-Math.PI/2, items:[
+    { name:"天路", en:"The Pilgrim's Way", color:"#d4af37", shape:"chapel",
+      desc:"依班扬《天路历程》的互动寓言：七章 44 场景，从毁灭之城走到天城。重担在十字架一次性脱落，疑惑城堡的出路要自己想起行囊里的应许之钥——神学即机制。",
+      tags:["游戏","互动叙事","彩绘玻璃"], link:"https://hannahlovegood.github.io/pilgrims-way/" },
     { name:"命定回响", en:"Mingding Echoes", color:"#e0556b", shape:"obelisk",
       desc:"点击思想家箴言『铭刻』命运，间隔冒出鬼面与低语的招魂仪式恐怖+哲学游戏，八大谱系 91 条真实箴言。",
       tags:["游戏","WebAudio","哲学"], link:"https://hannahlovegood.github.io/mingding-echoes/" },
@@ -638,6 +641,14 @@ const shapes = {
     const flap=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.16,0.32), makeMat(c)); flap.position.y=0.64; g.add(flap);
     const coin=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.05,24), makeMat('#ffd166',{emissive:'#ffbe3d',emissiveIntensity:0.7})); coin.rotation.x=Math.PI/2; coin.position.set(0.16,0.95,0); g.add(coin);
     const coin2=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.04,24), makeMat('#ffe9a8',{emissive:'#ffd166',emissiveIntensity:0.5})); coin2.rotation.x=Math.PI/2; coin2.position.set(-0.22,0.82,0.05); g.add(coin2);
+    return g; },
+  chapel(c){ const g=new THREE.Group();
+    const base=new THREE.Mesh(new THREE.BoxGeometry(0.66,0.12,0.4), makeMat('#2a2417',{flatShading:true})); base.position.y=0.06; g.add(base);
+    const body=new THREE.Mesh(new THREE.BoxGeometry(0.52,1.0,0.18), makeMat(c,{flatShading:true})); body.position.y=0.62; g.add(body);
+    const arch=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,0.18,20,1,false,0,Math.PI), makeMat(c,{flatShading:true})); arch.rotation.z=-Math.PI/2; arch.rotation.y=Math.PI/2; arch.position.y=1.12; g.add(arch);
+    const glass=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.62,0.04), makeMat('#2c5aa1',{emissive:'#2c5aa1',emissiveIntensity:0.7})); glass.position.set(0,0.66,0.1); g.add(glass);
+    const cv=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.4,0.05), makeMat('#ffd166',{emissive:'#ffd166',emissiveIntensity:0.9})); cv.position.set(0,0.66,0.13); g.add(cv);
+    const ch=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.06,0.05), makeMat('#ffd166',{emissive:'#ffd166',emissiveIntensity:0.9})); ch.position.set(0,0.76,0.13); g.add(ch);
     return g; },
   stele(c){ const g=new THREE.Group();
     const base=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.14,0.4), makeMat('#7a6248',{flatShading:true})); base.position.y=0.07; g.add(base);
