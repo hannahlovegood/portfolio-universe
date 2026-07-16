@@ -230,6 +230,9 @@ const ZONES = [
     { name:"全球黑客松地图", en:"Hackathon Atlas", color:"#22d3ee", shape:"atlas",
       desc:"四源聚合（Devpost/MLH/ETHGlobal/HackerEarth）的实时黑客松世界地图：离线地理编码上图，按时间/国家/类别/时长/奖金六维筛选，Actions 每日自动更新。",
       tags:["数据聚合","地图","Actions"], link:"https://hannahlovegood.github.io/hackathon-atlas/" },
+    { name:"DST Lab", en:"DST Lab", color:"#58a6ff", shape:"dice",
+      desc:"从零手写确定性模拟测试：把时间、随机、丢包、宕机全收进一个整数种子，撞出分布式转账 bug 后自动缩小成一笔转账的最小复现，修复并逐档丢包率证明。可玩消息序列图，九步看懂。",
+      tags:["分布式","测试","DST"], link:"https://hannahlovegood.github.io/dst-lab/" },
   ]},
   { name:"工具与效率", en:"TOOLS & UTILITIES", color:"#7ed957", a0:Math.PI/2, items:[
     { name:"读墨 Dumo", en:"Dumo", color:"#7ed957", shape:"books",
@@ -525,6 +528,17 @@ const shapes = {
     const lid=new THREE.Mesh(new THREE.BoxGeometry(0.95,0.08,0.7), makeMat('#7c6950')); lid.position.set(-0.08,0.68,0); lid.rotation.z=0.22; g.add(lid);
     const glow=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.03,0.55), makeMat(c,{emissive:c,emissiveIntensity:0.8})); glow.position.y=0.61; g.add(glow);
     const tag=new THREE.Mesh(new THREE.PlaneGeometry(0.26,0.18), makeMat('#efe7d6',{emissive:'#efe7d6',emissiveIntensity:0.12})); tag.position.set(0,0.32,0.33); g.add(tag);
+    return g; },
+  dice(c){ const g=new THREE.Group();
+    // 被驯服的骰子：随机性坐在底座上，被一圈"模拟轨道"环住——同种子永远掷出同一面
+    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.5,0.16,24), makeMat('#2b2b3a')); plinth.position.y=0.08; g.add(plinth);
+    const die=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.52,0.52), makeMat(c,{roughness:0.35})); die.position.y=0.62; die.rotation.set(0.5,0.65,0.15); g.add(die);
+    const pip=(x,y2,z)=>{ const p=new THREE.Mesh(new THREE.SphereGeometry(0.045,12,12), makeMat('#fffbe8',{emissive:'#fffbe8',emissiveIntensity:0.9})); p.position.set(x,y2,z); die.add(p); };
+    pip(0,0,0.27); pip(0.13,0.13,0.27); pip(-0.13,-0.13,0.27);            // 前面 3 点
+    pip(0.27,0.1,0.1); pip(0.27,-0.1,-0.1);                               // 侧面 2 点
+    pip(0.1,0.27,0); pip(-0.1,0.27,0); pip(0,0.27,0.12); pip(0,0.27,-0.12); // 顶面 4 点
+    const orbit=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.028,12,48), makeMat('#fff2c2',{emissive:'#ffdf7a',emissiveIntensity:0.7})); orbit.position.y=0.62; orbit.rotation.x=1.15; g.add(orbit);
+    const seedOrb=new THREE.Mesh(new THREE.SphereGeometry(0.06,14,14), makeMat('#fff2c2',{emissive:'#ffdf7a',emissiveIntensity:1.0})); seedOrb.position.set(0.52,0.62,0.15); g.add(seedOrb);
     return g; },
   lens(c){ const g=new THREE.Group();
     const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.7,14), makeMat('#5a4632')); handle.position.set(0.24,0.32,0); handle.rotation.z=0.6; g.add(handle);
