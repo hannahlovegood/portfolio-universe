@@ -255,6 +255,9 @@ const ZONES = [
       tags:["创作工具","AI"], link:"https://hannahlovegood.github.io/viral-video-studio/" },
   ]},
   { name:"创意与表达", en:"CREATIVE & SOCIAL", color:"#c77dff", a0:Math.PI, items:[
+    { name:"咬合 Interlock", en:"Interlock", color:"#d9b24c", shape:"interlock",
+      desc:"复节奏织机:不同拍号的声部共享一条脉冲、各自按周长绕圈,只在最小公倍数那一刻重新咬合成同一下拍。Web Audio 前瞻调度器+Canvas 同心齿轮,零依赖离线,灵感来自 King Crimson《Discipline》。",
+      tags:["复节奏","Web Audio","生成音画"], link:"https://hannahlovegood.github.io/interlock/" },
     { name:"B-Side 鲸落", en:"B-Side", color:"#37c6b0", shape:"record",
       desc:"AI 情绪 DJ『鲸落』听懂你的心情、为你挑歌，把感受变成一面情绪唱片墙。",
       tags:["AI","音乐","BYOK"], link:"https://hannahlovegood.github.io/bside/" },
@@ -539,6 +542,18 @@ const shapes = {
     pip(0.1,0.27,0); pip(-0.1,0.27,0); pip(0,0.27,0.12); pip(0,0.27,-0.12); // 顶面 4 点
     const orbit=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.028,12,48), makeMat('#fff2c2',{emissive:'#ffdf7a',emissiveIntensity:0.7})); orbit.position.y=0.62; orbit.rotation.x=1.15; g.add(orbit);
     const seedOrb=new THREE.Mesh(new THREE.SphereGeometry(0.06,14,14), makeMat('#fff2c2',{emissive:'#ffdf7a',emissiveIntensity:1.0})); seedOrb.position.set(0.52,0.62,0.15); g.add(seedOrb);
+    return g; },
+  interlock(c){ const g=new THREE.Group();
+    // 咬合：三个不同大小的环相互咬住，绕着同一个金色核心——最小公倍数处的接缝
+    const rings=[[0.5,0.055,'#e8623b'],[0.4,0.05,'#e0a53a'],[0.3,0.045,'#5bb98c']];
+    rings.forEach(([R,t,col],k)=>{
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(R,t,16,48), makeMat(col,{emissive:col,emissiveIntensity:0.6,metalness:0.35,roughness:0.4}));
+      ring.position.y=0.64; ring.rotation.x=1.1 + k*0.2; ring.rotation.y=k*(Math.PI/3);
+      g.add(ring);
+    });
+    const core=new THREE.Mesh(new THREE.SphereGeometry(0.12,18,18), makeMat('#f6ecd4',{emissive:'#ffdf7a',emissiveIntensity:1.0}));
+    core.position.y=0.64; g.add(core);
+    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.22,0.14,20), makeMat('#2b2b3a')); plinth.position.y=0.07; g.add(plinth);
     return g; },
   lens(c){ const g=new THREE.Group();
     const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.7,14), makeMat('#5a4632')); handle.position.set(0.24,0.32,0); handle.rotation.z=0.6; g.add(handle);
