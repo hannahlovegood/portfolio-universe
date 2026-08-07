@@ -235,6 +235,9 @@ const ZONES = [
       tags:["分布式","测试","DST"], link:"https://hannahlovegood.github.io/dst-lab/" },
   ]},
   { name:"工具与效率", en:"TOOLS & UTILITIES", color:"#7ed957", a0:Math.PI/2, items:[
+    { name:"喵账机", en:"Meow Ledger", color:"#38c3b4", shape:"meowledger",
+      desc:"复古掌机风多币种记账 PWA：原始金额永不覆盖、汇率记账时冻结、本位币随时换并无损重算；四种折算方式 + 像素橘猫桌宠，记账即喂猫，离线可用。",
+      tags:["多币种","PWA","像素猫"], link:"https://hannahlovegood.github.io/meow-ledger/" },
     { name:"读墨 Dumo", en:"Dumo", color:"#7ed957", shape:"books",
       desc:"微信读书笔记一键批量导出：可导入真实笔记，纯前端、数据不出浏览器，可导 ZIP。",
       tags:["工具","纯前端"], link:"https://hannahlovegood.github.io/dumo-web/" },
@@ -542,6 +545,19 @@ const shapes = {
     pip(0.1,0.27,0); pip(-0.1,0.27,0); pip(0,0.27,0.12); pip(0,0.27,-0.12); // 顶面 4 点
     const orbit=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.028,12,48), makeMat('#fff2c2',{emissive:'#ffdf7a',emissiveIntensity:0.7})); orbit.position.y=0.62; orbit.rotation.x=1.15; g.add(orbit);
     const seedOrb=new THREE.Mesh(new THREE.SphereGeometry(0.06,14,14), makeMat('#fff2c2',{emissive:'#ffdf7a',emissiveIntensity:1.0})); seedOrb.position.set(0.52,0.62,0.15); g.add(seedOrb);
+    return g; },
+  meowledger(c){ const g=new THREE.Group();
+    // 喵账机：一台青色小掌机，米白屏幕上蹲着一只橘猫
+    const shell=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.86,0.14), makeMat('#38c3b4',{roughness:0.5})); shell.position.y=0.62; g.add(shell);
+    const screen=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.4,0.03), makeMat('#f6efdc',{emissive:'#f6efdc',emissiveIntensity:0.35})); screen.position.set(0,0.78,0.075); g.add(screen);
+    const cat=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.11,0.03), makeMat('#f28c3a',{emissive:'#f28c3a',emissiveIntensity:0.4})); cat.position.set(0.04,0.7,0.09); g.add(cat);
+    const earL=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.045,0.03), makeMat('#f28c3a',{emissive:'#f28c3a',emissiveIntensity:0.4})); earL.position.set(-0.005,0.775,0.09); g.add(earL);
+    const earR=earL.clone(); earR.position.x=0.085; g.add(earR);
+    const dpad=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.045,0.04), makeMat('#2e3140')); dpad.position.set(-0.13,0.42,0.08); g.add(dpad);
+    const dpad2=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.14,0.04), makeMat('#2e3140')); dpad2.position.set(-0.13,0.42,0.08); g.add(dpad2);
+    const btnA=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.038,0.04,14), makeMat('#e04f5f',{emissive:'#e04f5f',emissiveIntensity:0.3})); btnA.rotation.x=Math.PI/2; btnA.position.set(0.16,0.45,0.08); g.add(btnA);
+    const btnB=btnA.clone(); btnB.material=makeMat('#7b68c9',{emissive:'#7b68c9',emissiveIntensity:0.3}); btnB.position.set(0.08,0.38,0.08); g.add(btnB);
+    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.22,0.14,20), makeMat('#2b2b3a')); plinth.position.y=0.07; g.add(plinth);
     return g; },
   interlock(c){ const g=new THREE.Group();
     // 咬合：三个不同大小的环相互咬住，绕着同一个金色核心——最小公倍数处的接缝
