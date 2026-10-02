@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>作品小宇宙 · Portfolio Universe</title>
-<meta name="description" content="一个可以走进去的 3D 作品集小宇宙：星空下的环形广场，四个星区、33 件作品。WASD 漫游，点击物件查看项目。" />
+<meta name="description" content="一个可以走进去的 3D 作品集小宇宙：星空下的环形广场，四个星区、40 件作品。WASD 漫游，点击物件查看项目。" />
 <style>
   :root{
     --bg:#0d0e20; --ink:#f4f1ea; --muted:#a9a6c0;
@@ -107,7 +107,7 @@
 
   <div class="topbar">
     <h1 id="siteTitle">作品小宇宙</h1>
-    <p id="siteSub">四个星区 · 33 件作品 · 走近一件，点亮它</p>
+    <p id="siteSub">四个星区 · 40 件作品 · 走近一件，点亮它</p>
   </div>
 
   <div id="labels" aria-hidden="false"></div>
@@ -139,7 +139,7 @@
   <!-- 入场 -->
   <div class="intro" id="intro">
     <h1>作品小宇宙</h1>
-    <p class="sub">一个可以走进去的 3D 作品集 · 星空下的四个星区，32 件真实作品</p>
+    <p class="sub">一个可以走进去的 3D 作品集 · 星空下的四个星区，40 件真实作品</p>
     <div class="keys">
       <div><b style="color:#f4f1ea">WASD / 摇杆</b><br/>在广场上走动</div>
       <div><b style="color:#f4f1ea">拖拽</b><br/>环顾四周</div>
@@ -160,7 +160,7 @@
 import * as THREE from 'three';
 
 /* ============================================================
-   ① 数据：四个星区 + 中央纪念碑，共 33 件已上线作品
+   ① 数据：四个星区 + 中央纪念碑，共 40 件已上线作品
    name 中文名 / en 英文名 / desc 一句话 / tags 标签 / link 链接
    color 是该物件 + 卡片的主题色 / shape 决定它长什么样
    ============================================================ */
@@ -168,6 +168,12 @@ const OWNER = "Hannah"; // ← 显示在标题里的名字
 
 const ZONES = [
   { name:"游戏与叙事", en:"GAMES & STORIES", color:"#ff8f6b", a0:-Math.PI/2, items:[
+    { name:"枯山水", en:"Karesansui", color:"#c2503b", shape:"karesansui",
+      desc:"一笔到底的耙沙解谜：从 ● 拖过每一格白砂，不能回头，石头只能绕着走；解出来的那一笔就是一座耙好的庭。十五座手工庭加每日一庭，内联的哈密顿路径求解器负责提示、生成与验证。",
+      tags:["解谜","求解器","SVG"], link:"https://hannahlovegood.github.io/karesansui/" },
+    { name:"石上苔", en:"Stone Moss", color:"#6f9c4a", shape:"mossrock",
+      desc:"一块石头上的苔藓，按真实时间慢慢长——关掉页面它也在长，回来时补算离开的那些天。浇水、三档光照、修剪收孢子、播孢开新群落；五个真实品种各有习性，苔藓不会死，只会干渴休眠等一场水。",
+      tags:["真实时间养成","Three.js","确定性模拟"], link:"https://hannahlovegood.github.io/stone-moss/" },
     { name:"天路", en:"The Pilgrim's Way", color:"#d4af37", shape:"chapel",
       desc:"依班扬《天路历程》的互动寓言：七章 44 场景，从毁灭之城走到天城。重担在十字架一次性脱落，疑惑城堡的出路要自己想起行囊里的应许之钥——神学即机制。",
       tags:["游戏","互动叙事","彩绘玻璃"], link:"https://hannahlovegood.github.io/pilgrims-way/" },
@@ -560,6 +566,38 @@ const shapes = {
     const dpad2=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.14,0.04), makeMat('#2e3140')); dpad2.position.set(-0.13,0.42,0.08); g.add(dpad2);
     const btnA=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.038,0.04,14), makeMat('#e04f5f',{emissive:'#e04f5f',emissiveIntensity:0.3})); btnA.rotation.x=Math.PI/2; btnA.position.set(0.16,0.45,0.08); g.add(btnA);
     const btnB=btnA.clone(); btnB.material=makeMat('#7b68c9',{emissive:'#7b68c9',emissiveIntensity:0.3}); btnB.position.set(0.08,0.38,0.08); g.add(btnB);
+    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.22,0.14,20), makeMat('#2b2b3a')); plinth.position.y=0.07; g.add(plinth);
+    return g; },
+  mossrock(c){ const g=new THREE.Group();
+    // 石上苔：一块低多边形石头卧在浅盘里，向阳的那半面爬满苔簇
+    const dish=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.34,0.10,22), makeMat('#5c5347'));
+    dish.position.y=0.05; g.add(dish);
+    const rock=new THREE.Mesh(new THREE.IcosahedronGeometry(0.30,1), makeMat('#a89e8c',{roughness:0.95,flatShading:true}));
+    rock.scale.set(1.25,0.82,1.05); rock.position.y=0.30; g.add(rock);
+    const pos=rock.geometry.attributes.position;
+    for(let i=0;i<pos.count;i+=2){
+      const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);
+      if(y<0.02) continue;                        // 只在上半面长苔
+      const tuft=new THREE.Mesh(new THREE.SphereGeometry(0.055+((i*37)%5)*0.006,6,4),
+        makeMat(i%3===0?'#8fbf7d':'#6f9c4a',{emissive:'#3f6b2c',emissiveIntensity:0.28,roughness:0.9}));
+      tuft.position.set(x*1.30, 0.30+y*0.86, z*1.10);
+      tuft.scale.y=0.55; g.add(tuft);
+    }
+    const drop=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,10), makeMat('#bfe0f2',{emissive:'#7fc4e8',emissiveIntensity:0.9}));
+    drop.position.y=0.86; drop.scale.y=1.35; g.add(drop);   // 悬在上方的一滴水
+    return g; },
+  karesansui(c){ const g=new THREE.Group();
+    // 枯山水：一方斜置的白砂盘——左半耙成直纹，右边一块石头外绕两圈环纹，角上一枚朱印，砂上落一片银杏叶
+    const tray=new THREE.Group(); tray.position.y=0.64; tray.rotation.x=0.6; g.add(tray);
+    const rim=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.08,0.82), makeMat('#24282a',{roughness:0.7})); tray.add(rim);
+    const sand=new THREE.Mesh(new THREE.BoxGeometry(1.06,0.03,0.68), makeMat('#e8e1d2',{emissive:'#e8e1d2',emissiveIntensity:0.12,roughness:0.95})); sand.position.y=0.045; tray.add(sand);
+    const lineMat=makeMat('#bfb49b',{roughness:0.95});
+    for(let k=0;k<5;k++){ const ln=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.012,0.016), lineMat); ln.position.set(-0.22,0.066,-0.26+k*0.13); tray.add(ln); }
+    for(const R of [0.15,0.22]){ const ring=new THREE.Mesh(new THREE.TorusGeometry(R,0.009,6,48), lineMat); ring.rotation.x=Math.PI/2; ring.position.set(0.26,0.064,-0.04); tray.add(ring); }
+    const moss=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.008,20), makeMat('#6e7d52')); moss.position.set(0.28,0.066,-0.02); tray.add(moss);
+    const stone=new THREE.Mesh(new THREE.IcosahedronGeometry(0.1,0), makeMat('#5c6167',{flatShading:true,roughness:0.6})); stone.scale.set(1,0.7,0.85); stone.position.set(0.26,0.11,-0.04); tray.add(stone);
+    const seal=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.012,0.1), makeMat(c,{emissive:c,emissiveIntensity:0.55})); seal.position.set(0.44,0.068,0.24); tray.add(seal);
+    const leaf=new THREE.Mesh(new THREE.CircleGeometry(0.055,14,0,Math.PI), makeMat('#d3a93a',{emissive:'#d3a93a',emissiveIntensity:0.7,side:THREE.DoubleSide})); leaf.rotation.x=-Math.PI/2; leaf.rotation.z=0.6; leaf.position.set(0.02,0.07,0.14); tray.add(leaf);
     const plinth=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.22,0.14,20), makeMat('#2b2b3a')); plinth.position.y=0.07; g.add(plinth);
     return g; },
   interlock(c){ const g=new THREE.Group();
